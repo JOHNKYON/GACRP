@@ -6,7 +6,7 @@ from __future__ import print_function
 import lightgbm as lgb
 
 
-class LightGBM():
+class LightGBM:
     # TODO: Log
     """
     LightBGM model class.
@@ -31,6 +31,16 @@ class LightGBM():
             Y_valid,
             feature_names='auto',
             categorical_features='auto'):
+        """
+        Train a lightGBM model.
+        :param X: (pandas.DataFrame) Training data X.
+        :param Y: (pandas.DataFrame) Training data Y.
+        :param X_valid: (pandas.DataFrame) Cross validation data X.
+        :param Y_valid: (pandas.DataFrame) Cross validation data Y.
+        :param feature_names: (pandas.DataFrame) Labels for X.
+        :param categorical_features: (pandas.DataFrame) Labels for categorical fetures in X.
+        :return: (LightGBM) The class itself.
+        """
 
         data_train = lgb.Dataset(data=X,
                                  label=Y,
@@ -53,4 +63,11 @@ class LightGBM():
                 X,
                 feature_names='auto',
                 categorical_features='auto'):
+        """
+        Predict output Y with the trained model and input X.
+        :param X: (pandas.DataFrame) Prediction input data X.
+        :param feature_names: feature_names: (pandas.DataFrame) Labels for X.
+        :param categorical_features: (pandas.DataFrame) Labels for categorical fetures in X.
+        :return: (pandas.DataFrame) The prediction result.
+        """
         return self.model.predict(X, num_iteration=self.model.best_iteration)

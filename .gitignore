@@ -2,6 +2,7 @@
 .DS_Store
 Pipfile
 Pipfile.lock
+notebook/
 
 # Data
 data/
