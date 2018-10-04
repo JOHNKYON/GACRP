@@ -3,6 +3,7 @@
 Pipfile
 Pipfile.lock
 notebook/
+submission/
 
 # Data
 data/

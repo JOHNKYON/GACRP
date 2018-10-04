@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import lightgbm as lgb
+from lightgbm import LGBMRegressor
 
 
 class LightGBM:
@@ -17,12 +17,17 @@ class LightGBM:
     def __init__(self, params, training_params):
         """
         Initialization of a LightGBM model.
-        :param params: Parameters to define a lightGBM model.
+        :param params: (dict) Parameters to define a lightGBM model.
         """
-        self.params = params
-        self.num_boost_round = training_params['num_boost_round']
+        self.verbose = training_params['verbose']
         self.early_stop_round = training_params['early_stop_round']
         self.evaluation_function = None
+        self.gbm = LGBMRegressor(objective='regression',
+                                 boosting_type='gbdt',
+                                 metric='rmse',
+                                 n_estimators=params['n_estimators'],
+                                 num_leaves=params['num_leaves'],
+                                 learning_rate=params['learning_rate'])
 
     def fit(self,
             X,
@@ -42,25 +47,28 @@ class LightGBM:
         :return: (LightGBM) The class itself.
         """
 
-        data_train = lgb.Dataset(data=X,
-                                 label=Y,
-                                 feature_name=feature_names,
-                                 categorical_feature=categorical_features)
-        data_valid = lgb.Dataset(data=X_valid,
-                                 label=Y_valid,
-                                 feature_name=feature_names,
-                                 categorical_feature=categorical_features)
+        # data_train = lgb.Dataset(data=X,
+        #                          label=Y,
+        #                          feature_name=feature_names,
+        #                          categorical_feature=categorical_features)
+        # data_valid = lgb.Dataset(data=X_valid,
+        #                          label=Y_valid,
+        #                          feature_name=feature_names,
+        #                          categorical_feature=categorical_features)
+        #
+        # self.model = lgb.train(self.params,
+        #                        data_train,
+        #                        num_boost_round=self.num_boost_round,
+        #                        valid_sets=data_valid,
+        #                        early_stopping_rounds=self.early_stop_round)
+        model = self.gbm.fit(X, Y, eval_set=[(X_valid, Y_valid)], verbose=self.verbose,
+                             eval_metric='rmse', early_stopping_rounds=self.early_stop_round)
 
-        self.model = lgb.train(self.params,
-                               data_train,
-                               num_boost_round=self.num_boost_round,
-                               valid_sets=data_valid,
-                               early_stopping_rounds=self.early_stop_round)
-
-        return self
+        return model.best_iteration_
 
     def predict(self,
                 X,
+                num_iteration,
                 feature_names='auto',
                 categorical_features='auto'):
         """
@@ -70,4 +78,4 @@ class LightGBM:
         :param categorical_features: (pandas.DataFrame) Labels for categorical fetures in X.
         :return: (pandas.DataFrame) The prediction result.
         """
-        return self.model.predict(X, num_iteration=self.model.best_iteration)
+        return self.gbm.predict(X, num_iteration=num_iteration)

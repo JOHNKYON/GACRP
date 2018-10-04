@@ -6,8 +6,10 @@ from __future__ import print_function
 import json
 from functools import reduce
 
+import numpy as np
 import pandas as pd
 from pandas.io.json import json_normalize
+from sklearn.preprocessing import LabelEncoder
 
 
 class DataBoy:
@@ -20,7 +22,7 @@ class DataBoy:
         """
         self.data_path = data_path
 
-    def load_data(self, paths, mode='train', json_columns='totals'):
+    def load_data(self, paths, mode='train', json_columns=['totals']):
         """
         This function load and modify them by the mode.
         :param paths: (Tuple || List) Paths of data.
@@ -37,7 +39,7 @@ class DataBoy:
 
         data = map(lambda a: pd.read_csv(a,
                                          dtype={'fullVisitorId': str},
-                                         converters=json_conv,), paths)
+                                         converters=json_conv), paths)
 
         data = reduce(lambda a, b: pd.concat([a, b], axis=1), data)
 
@@ -48,7 +50,35 @@ class DataBoy:
             data = data.merge(temp_df, left_index=True, right_index=True)
             data = data.drop(columns=jcol)
 
+        # Drop meaningless marking columns.
+        ids = data['fullVisitorId']
+        data.drop(columns=['fullVisitorId', 'sessionId', 'visitId'], axis=1, inplace=True)
+
+        # Fill nan, label encoding.
+        num_col = ["totals_hits", "totals_pageviews", "visitNumber", "visitStartTime", 'totals_bounces',
+                   'totals_newVisits']
+
+        # Target is inside training set.
         if mode == 'train':
-            return data.loc[:, data.columns != 'totals_transactionRevenue'], data['totals_transactionRevenue']
+            num_col += ['totals_transactionRevenue']
+
+        # Fill nan with 0, and transform some string numeric values to numbers.
+        for col in num_col:
+            data[col] = data[col].astype('float').fillna(0)
+
+        cat_col = [e for e in data.columns.tolist() if e not in num_col]
+
+        # Do not label data.
+        cat_col.remove('date')
+
+        for col in cat_col:
+            lab_en = LabelEncoder()
+            data[col] = data[col].fillna('not known')
+            lab_en.fit(list(data[col].astype('str')) + list(data[col].astype('str')))
+            data[col] = lab_en.transform(list(data[col].astype('str')))
+
+        if mode == 'train':
+            return ids, data.loc[:, data.columns != 'totals_transactionRevenue'], \
+                   np.log1p(data['totals_transactionRevenue'])
         else:
-            return data.loc[:, data.columns != 'totals_transactionRevenue']
+            return ids, data.loc[:, data.columns != 'totals_transactionRevenue']

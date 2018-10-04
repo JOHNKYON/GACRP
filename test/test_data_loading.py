@@ -20,9 +20,11 @@ class TestDataBoy:
 
     def test_load_data(self):
         """Unit test for data loading"""
-        train_x, train_y = self.databoy.load_data(['train.csv'], mode='train', json_columns=['totals'])
-        assert train_x.shape == (1000, 16)
+        ids, train_x, train_y = self.databoy.load_data(['train.csv'], mode='train', json_columns=['totals'])
+        assert ids.shape == (1000,)
+        assert train_x.shape == (1000, 13)
         assert train_y.shape == (1000,)
 
-        test_x = self.databoy.load_data(['test.csv'], mode='test', json_columns=['totals'])
-        assert test_x.shape == (1000, 16)
+        ids, test_x = self.databoy.load_data(['test.csv'], mode='test', json_columns=['totals'])
+        assert ids.shape == (1000,)
+        assert test_x.shape == (1000, 13)
